@@ -9,9 +9,14 @@ function resolve (dir) {
 }
 
 module.exports = {
+  {{#if_eq applicationType 'SPA'}}
   entry: {
     app: './src/main.js'
   },
+  {{/if_eq}}
+  {{#if_eq applicationType 'MPA'}}
+  entry: utils.getEntries('./src/entries/**/*.js'),
+  {{/if_eq}}
   output: {
     path: config.build.assetsRoot,
     filename: '[name].js',
@@ -28,6 +33,7 @@ module.exports = {
       '@': resolve('src'),
     }
   },
+  plugins: [],
   module: {
     rules: [
       {{#lint}}
@@ -75,7 +81,30 @@ module.exports = {
           limit: 10000,
           name: utils.assetsPath('fonts/[name].[hash:7].[ext]')
         }
-      }
+      }{{#typescript}},
+      {
+        test: /\.ts$/,
+        loader: 'ts-loader',
+        exclude: /node_modules/,
+        options: {
+          appendTsSuffixTo: [/\.vue$/]
+        }
+      }{{/typescript}}
     ]
   }
 }
+
+{{#if_eq applicationType 'MPA'}}
+var pages = utils.getEntries('./pages/*.html')
+for(var page in pages) {
+  var conf = {
+    filename: page + '.html',
+    template: pages[page],
+    inject: true,
+    excludeChunks: Object.keys(pages).filter(item => {
+      return (item != page)
+    })
+  }
+  module.exports.plugins.push(new HtmlWebpackPlugin(conf))
+}
+{{/if_eq}}
